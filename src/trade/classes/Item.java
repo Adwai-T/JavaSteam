@@ -4,16 +4,14 @@ import org.bson.Document;
 import org.json.simple.JSONObject;
 import org.json.simple.JSONValue;
 import steamapi.Steam_TradeAPI;
+import trade.Trade;
 import trade.enums.EItemQuality;
 import utils.Regex_Handler;
 
 import java.io.IOException;
 import java.net.http.HttpClient;
 import java.net.http.HttpResponse;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /*
 To get all the items in player's inventory we could use
@@ -52,7 +50,9 @@ public class Item {
     public String collection; //eg Warbird Collections
     public String exterior; //eg Field Test, Factory New
     public Boolean hasKillStreakActive;
+    public Boolean hasKillstreakSheen;
     public String killstreakSheen;
+    public Boolean hasKillstreakEffect;
     public String killstreakEffect;
     public Boolean isFestivized; //If name has festivized and description does not
     // that means a festivizer has been applied to this item
@@ -67,11 +67,7 @@ public class Item {
     public String tradable;
     public String commodity;
     public String marketable;
-    public String fraudwarnings; //When an item is renamed. The original name of the item is saved here with a warning.
-
-    //The Price we want to sell/buy this item. We set the price from our database.
-    public String sellingPrice;
-    public String buyingPrice;
+    public String fraudwarnings; //When an item is renamed, this is the renamed string.
 
     public Item() {};
 
@@ -104,7 +100,9 @@ public class Item {
         if(this.hasKillStreakActive){
             JSONObject killstreak = new JSONObject();
             killstreak.put("active", this.hasKillStreakActive);
+            killstreak.put("hasKillstreakSheen", this.hasKillstreakSheen);
             killstreak.put("sheen", this.killstreakSheen);
+            killstreak.put("hasKillstreakEffect", this.hasKillstreakEffect);
             killstreak.put("effect", this.killstreakEffect);
             item.put("killstreak", killstreak);
         }
@@ -192,6 +190,7 @@ public class Item {
             populateItemWithAppSpecificData(item, appdataJson);
 
             deduceItemQuality(item);
+            deduceKillstreakProperties(item);
         }
     }
 
@@ -302,6 +301,14 @@ public class Item {
         return null;
     }
 
+    private static void deduceKillstreakProperties(Item item){
+        if(item.hasKillStreakActive) {
+            if(item.killstreakSheen != null) item.hasKillstreakSheen = true;
+            if(item.killstreakEffect != null) item.hasKillstreakEffect = true;
+        }
+    }
+
+
     public Map<String, Object> toMap() {
         Map<String, Object> desc = new HashMap<String, Object>();
         desc.put("name", this.name);
@@ -314,13 +321,12 @@ public class Item {
         desc.put("paint", this.paint);
         desc.put("craftable", this.craftable);
 
-        desc.put("Selling At", this.sellingPrice);
-        desc.put("Buying At", this.buyingPrice);
-
-        Map<String, String> killstreak = new HashMap<>();
-        killstreak.put("is_active", this.hasKillStreakActive.toString());
-        killstreak.put("sheen", this.killstreakSheen);
-        killstreak.put("effect", this.killstreakEffect);
+        Map<String, Object> killstreak = new HashMap<>();
+        killstreak.put("is_active", this.hasKillStreakActive);
+        killstreak.put("hasKillstreakSheen", this.hasKillstreakSheen);
+        killstreak.put("killstreakSheen", this.killstreakSheen);
+        killstreak.put("hasKillstreakEffect", this.hasKillstreakEffect);
+        killstreak.put("killstreakEffect", this.killstreakEffect);
         desc.put("killstreak", killstreak);
 
         return desc;
@@ -329,5 +335,92 @@ public class Item {
     public Document toBsonDocument() {
         Document itemDoc = new Document(this.toMap());
         return itemDoc;
+    }
+
+    /*
+        We give leeway when we buy item, so we can buy items more valuable than what we asked for.
+        eg. A item that has paint when we buy order for item without any can be bought.
+        But when we sell items we want the item to be exactly matched so that we get the exact price
+        for that item as we have set.
+        eg. when we sell we want so differentiate between painted and non painted items and even the
+        paint color of item.
+     */
+    public boolean compareItemToDocument(Document doc, Trade.TradeOperation operation) {
+        if(name.equals(doc.getString("name")) && market_name.equals(doc.get("market_name"))){
+            //effect can be null and hence a String comparison will not work here.
+            if(
+                    quality.toString().equals(doc.get("quality"))
+                    && Objects.equals(effect, doc.get("effect"))
+                    && Objects.equals(craftable, doc.get("craftable"))
+                    && Objects.equals(exterior, doc.get("ware"))
+            ){
+                if(operation == Trade.TradeOperation.BUY) {
+                    return compareBuySpecific(doc);
+                }else return compareSellSpecific(doc);
+            }
+        }
+        return false;
+    }
+
+    private boolean compareBuySpecific(Document doc) {
+        if(isFestivized || Objects.equals(doc.get("isFestivized"), isFestivized)){
+            if(doc.get("paint") != null) {
+                if(Objects.equals(doc.get("paint"), paint)) {
+                    return compareKillstreakFromDocumentToBuy(doc);
+                } else return false;
+            } else return compareKillstreakFromDocumentToBuy(doc);
+        }
+        return false;
+    }
+
+    private boolean compareKillstreakFromDocumentToBuy(Document doc) {
+        if(hasKillStreakActive || Objects.equals(doc.get("hasKillstreakActive"), hasKillStreakActive)){
+            if(hasKillstreakSheen || Objects.equals(doc.get("hasKillstreakSheen"), hasKillstreakSheen)){
+                if(hasKillstreakEffect || Objects.equals(doc.get("hasKillstreakEffect"), hasKillstreakEffect)){
+                    if(doc.get("killstreakSheen") != null) {
+                        if(doc.get("killstreakSheen").equals(killstreakSheen)) {
+                            if (doc.get("killstreakEffect") != null) {
+                               if(doc.get("killstreakEffect").equals(killstreakEffect)) {
+                                   return true;
+                               }else return false;
+                            }else return true;
+                        }else {
+                            return false;
+                        }
+                    }else {
+                        if (doc.get("killstreakEffect") != null) {
+                            if(doc.get("killstreakEffect").equals(killstreakEffect)) {
+                                return true;
+                            }else return false;
+                        }else return true;
+                    }
+                }
+            }
+        }
+        return false;
+    }
+
+    private boolean compareSellSpecific(Document doc) {
+        if(Objects.equals(doc.get("isFestivized"), isFestivized)){
+            if(Objects.equals(doc.get("paint"), paint)) {
+                return compareKillstreakFromDocumentToSell(doc);
+            }
+        }
+        return false;
+    }
+
+    private boolean compareKillstreakFromDocumentToSell(Document doc) {
+        if(Objects.equals(doc.get("hasKillstreakActive"), hasKillStreakActive)){
+            if(Objects.equals(doc.get("hasKillstreakSheen"), hasKillstreakSheen)) {
+                if (Objects.equals(doc.get("hasKillstreakEffect"), hasKillstreakEffect)) {
+                    if (doc.get("killstreakSheen").equals(killstreakSheen)) {
+                        if (doc.get("killstreakEffect").equals(killstreakEffect)) {
+                            return true;
+                        }
+                    }
+                }
+            }
+        }
+        return false;
     }
 }
