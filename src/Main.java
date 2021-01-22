@@ -2,6 +2,7 @@ import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoClients;
 import login.Login;
 import login.UserDetails;
+import org.bson.Document;
 import org.json.simple.parser.ParseException;
 import tests.SteamId_Test;
 import trade.TradeOffer_DataBase;
@@ -26,10 +27,9 @@ public class Main {
     public HashMap<String, String> cookies;
     public static MongoClient db_client;
     public static TradeOffer_DataBase db;
-    public static ArrayList<String> trades;
+    public static ArrayList<Document> trades;
 
     public Main(){
-
         // Bot Start
         System.out.println(ColorToTerminal.ANSI_GREEN + "Bot Started" + ColorToTerminal.ANSI_RESET);
 
@@ -37,8 +37,9 @@ public class Main {
         if(UserDetails.MONGODBLINK != null) {
             db_client = MongoClients.create(UserDetails.MONGODBLINK);
             db = new TradeOffer_DataBase(db_client);
+        }else {
+            db_client = null;
         }
-        db_client = null;
 
         //trades from database that have selling and buying price for items.
         trades = new ArrayList<>();
@@ -103,7 +104,7 @@ public class Main {
 
     private void addCommonCookiesToMap() {
         cookies.put("Steam_Language", "english");
-        cookies.put("timezoneOffset", "19800");// This is timezoneOffset for india.
+        cookies.put("timezoneOffset", "19800");// This is timezoneOffset for India.
         cookies.put("bCompletedTradeOfferTutorial", "true");
         cookies.put("sessionid", Login.generateSessionId());
     }

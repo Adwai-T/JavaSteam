@@ -6,6 +6,7 @@ import org.json.simple.JSONObject;
 import org.json.simple.JSONValue;
 import trade.classes.Item;
 import trade.classes.TradeOffer;
+import utils.ColorToTerminal;
 import utils.Form_UrlEncoder;
 import utils.HttpRequestBuilder;
 
@@ -19,6 +20,42 @@ import java.util.List;
 import java.util.Map;
 
 public class Steam_TradeAPI {
+
+    public static boolean hasNewTradeOffers(HttpClient client) throws IOException, InterruptedException {
+        try {
+            JSONObject response = (JSONObject) JSONValue.parse(
+                    getTradeOfferSummary(client).body());
+
+            JSONObject res = (JSONObject) response.get("response");
+            if((Long)res.get("pending_received_count") > 0) {
+                return true;
+            }else {
+                return false;
+            }
+
+        }catch (Exception e){
+            System.out.println(ColorToTerminal.ANSI_RED + "Failed to Get Trade Offer Summary");
+            System.out.println(e.getMessage() + ColorToTerminal.ANSI_RESET);
+            e.printStackTrace();
+            hasNewTradeOffers(client);
+            return false;
+        }
+    }
+
+    private static HttpResponse<String> getTradeOfferSummary(HttpClient client) throws IOException, InterruptedException {
+        String url = "https://api.steampowered.com/IEconService/GetTradeOffersSummary/v1";
+
+        Map<String, String> params = new HashMap<>();
+        params.put("key", UserDetails.APIKEY);
+        params.put("language", "english");
+        String urlEncodedParams = Form_UrlEncoder.encode(params);
+
+        Map<String, String> headers = new HashMap<>();
+
+        HttpRequest request = HttpRequestBuilder.build(url, headers, HttpRequestBuilder.RequestType.GET, null, urlEncodedParams);
+
+        return client.send(request, HttpResponse.BodyHandlers.ofString());
+    }
 
     private static HttpResponse<String> fetchActiveTradeOffers(HttpClient client, String cutoffTime) throws IOException, InterruptedException {
         String url = "https://api.steampowered.com/IEconService/GetTradeOffers/v1";

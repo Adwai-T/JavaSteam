@@ -72,7 +72,7 @@ public class TradeOffer_Test {
             System.out.println("Please Enter a valid index");
             acceptTradeOfferTest(cookies);
         } else {
-            offers.get(index).acceptTradeOffer(client, cookies);
+            offers.get(index).accept(client, cookies);
         }
     }
 

@@ -40,7 +40,7 @@ public class TradeOffer {
 
     public TradeOffer() {}
 
-    public boolean acceptTradeOffer(HttpClient client, Map<String, String> cookies) throws IOException, InterruptedException {
+    public boolean accept(HttpClient client, Map<String, String> cookies) throws IOException, InterruptedException {
 
         if(this.trade_offer_state != ETradeOfferState.Active) {
             return false;
@@ -75,6 +75,9 @@ public class TradeOffer {
 
         return true;
     }
+
+    //TODO : Implement Decline TradeOffers
+    public boolean decline() { return false; }
 
     public static TradeOffer parseTradeOfferFromJSON(JSONObject jsonTradeOffer) {
         TradeOffer tradeOffer = new TradeOffer();

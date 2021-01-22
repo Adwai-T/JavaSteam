@@ -1,6 +1,5 @@
 package trade;
 
-import com.mongodb.client.FindIterable;
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
@@ -10,6 +9,7 @@ import utils.ColorToTerminal;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Consumer;
 
 public class TradeOffer_DataBase {
 
@@ -20,22 +20,28 @@ public class TradeOffer_DataBase {
         if(client != null) {
             this.client = client;
             db = this.client.getDatabase("Steam");
-        }else System.out.println(ColorToTerminal.ANSI_RED + "You have not added a link to MongoDB, local file will be used." + ColorToTerminal.ANSI_RESET);
+        }else
+            System.out.println(ColorToTerminal.ANSI_RED
+                    + "You have not added a link to MongoDB, local file will be used."
+                    + ColorToTerminal.ANSI_RESET
+            );
     }
 
-    public FindIterable<Document> updateTradesList() {
-        MongoCollection<Document> update = db.getCollection("Accept");
-        return update.find();
+    public List<Document> getTradesList() {
+        MongoCollection<Document> col = db.getCollection("Accept");
+        List<Document> docs = new ArrayList<>();
+        col.find().forEach((Consumer<Document>) docs::add);
+        return docs;
     }
 
     public boolean saveTradeOffer(TradeOffer offer){
-        MongoCollection<Document> offers = db.getCollection("Offers");
+        MongoCollection<Document> offers = db.getCollection("Accepted");
         offers.insertOne(offer.toBsonDocument());
         return true;
     }
 
     public boolean saveTradeOffers(List<TradeOffer> tradeOffers) {
-        MongoCollection<Document> offers = db.getCollection("Offers");
+        MongoCollection<Document> offers = db.getCollection("Accepted");
         try {
             List<Document> offerDocs = new ArrayList<>();
             for(TradeOffer offer : tradeOffers) {
@@ -43,11 +49,10 @@ public class TradeOffer_DataBase {
             }
             offers.insertMany(offerDocs);
         }catch (Exception e) {
-            System.out.println(ColorToTerminal.ANSI_RED + "Database tradeoffer Save failed.");
+            System.out.println(ColorToTerminal.ANSI_RED + "Database TradeOffer Save failed.");
             System.out.println(e.getMessage() + ColorToTerminal.ANSI_RESET);
             return false;
         }
-
         return false;
     }
 }
