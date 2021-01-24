@@ -27,4 +27,67 @@ public class ColorToTerminal {
     public static final String ANSI_CYAN_BACKGROUND = "\u001B[46m";
     public static final String ANSI_WHITE_BACKGROUND = "\u001B[47m";
 
+    //----String Color
+    public static final void printRED(String string) {
+        System.out.println(ANSI_RED + string + ANSI_RESET);
+    }
+
+    public static final void printGREEN(String string) {
+        System.out.println(ANSI_GREEN + string + ANSI_RESET);
+    }
+    public static final void printYELLOW(String string) {
+        System.out.println(ANSI_YELLOW + string + ANSI_RESET);
+    }
+
+    public static final void printBLUE(String string) {
+        System.out.println(ANSI_BLUE + string + ANSI_RESET);
+    }
+
+    public static final void printPURPLE(String string) {
+        System.out.println(ANSI_PURPLE + string + ANSI_RESET);
+    }
+
+    public static final void printCYAN(String string) {
+        System.out.println(ANSI_CYAN + string + ANSI_RESET);
+    }
+
+    public static final void printWHITE(String string) {
+        System.out.println(ANSI_WHITE + string + ANSI_RESET);
+    }
+
+    public static final void printBLACK(String string) {
+        System.out.println(ANSI_BLACK + string + ANSI_RESET);
+    }
+
+    //--- Background
+    public static final void printBGRED(String string) {
+        System.out.println(ANSI_RED_BACKGROUND + ANSI_GREEN + string + ANSI_RESET);
+    }
+
+    public static final void printBGGREEN(String string) {
+        System.out.println(ANSI_GREEN_BACKGROUND + ANSI_RED + string + ANSI_RESET);
+    }
+    public static final void printBGYELLOW(String string) {
+        System.out.println(ANSI_YELLOW_BACKGROUND + ANSI_PURPLE + string + ANSI_RESET);
+    }
+
+    public static final void printBGBLUE(String string) {
+        System.out.println(ANSI_BLUE_BACKGROUND + ANSI_RED + string + ANSI_RESET);
+    }
+
+    public static final void printBGPURPLE(String string) {
+        System.out.println(ANSI_PURPLE_BACKGROUND + ANSI_YELLOW + string + ANSI_RESET);
+    }
+
+    public static final void printBGCYAN(String string) {
+        System.out.println(ANSI_CYAN_BACKGROUND + ANSI_BLACK + string + ANSI_RESET);
+    }
+
+    public static final void printBGWHITE(String string) {
+        System.out.println(ANSI_WHITE_BACKGROUND + ANSI_BLACK + string + ANSI_RESET);
+    }
+
+    public static final void printBGBLACK(String string) {
+        System.out.println(ANSI_BLACK_BACKGROUND + ANSI_WHITE + string + ANSI_RESET);
+    }
 }

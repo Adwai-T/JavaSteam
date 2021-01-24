@@ -48,6 +48,10 @@ public class Trade implements Runnable {
                         continue;
                     }
 
+                    if(TradeOffer.recentlyAcceptedTradeOffers.contains(offer.tradeofferid)) {
+                        continue;
+                    }
+
                     List<Item> items = new ArrayList<>(offer.items_to_give);
                     items.addAll(offer.items_to_receive);
 
@@ -56,10 +60,17 @@ public class Trade implements Runnable {
                     if(checkTradeValue(offer)){
                         if(offer.accept(client, cookies)) {
                             db.saveTradeOffer(offer, "Accepted");
+                            System.out.println(ColorToTerminal.ANSI_CYAN
+                                    + "Trade Offer Accepted and Saved to DB"
+                                    + ColorToTerminal.ANSI_RESET
+                            );
                         }
-                        System.out.println("Trade Offer Accepted.");
                     }else {
-                        if(offer.decline(client)) db.saveTradeOffer(offer, "Declined");
+                        if(offer.decline(client)) {
+                            db.saveTradeOffer(offer, "Declined");
+                            ColorToTerminal.printCYAN("TradeOffer Declined, and Saved to DB");
+                        }
+
                     }
                 }
             }

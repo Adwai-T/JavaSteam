@@ -21,6 +21,8 @@ import java.util.Map;
 
 public class TradeOffer {
 
+    public static ArrayList<String> recentlyAcceptedTradeOffers = new ArrayList<>();
+
     //Names Of all variables are kept the same as those in the json reply.
     public String tradeofferid;
     public String accountid_other; //Partner account 32Bit\
@@ -67,6 +69,8 @@ public class TradeOffer {
 
         HttpRequest request = HttpRequestBuilder.build(url, headers, HttpRequestBuilder.RequestType.POST,bodyString);
         HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+
+        recentlyAcceptedTradeOffers.add(this.tradeofferid);
 
         return true;
     }
