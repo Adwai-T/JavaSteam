@@ -4,6 +4,7 @@ import org.bson.Document;
 import steamapi.Steam_TradeAPI;
 import trade.classes.Item;
 import trade.classes.TradeOffer;
+import trade.enums.ETradeOfferState;
 import utils.ColorToTerminal;
 import utils.TimeStamp_Handler;
 
@@ -18,10 +19,17 @@ import java.util.Map;
 public class Trade implements Runnable {
 
     private List<Document> accept;
+    private HttpClient client;
+    private TradeOffer_DataBase db;
+    Map<String, String> cookies;
 
-    public Trade() {}
+    public Trade(HttpClient client, TradeOffer_DataBase db, Map<String, String> cookies) {
+        this.client = client;
+        this.db = db;
+        this.cookies = cookies;
+    }
 
-    private void trade(HttpClient client, TradeOffer_DataBase db, Map<String, String> cookies) {
+    private void trade() {
         try{
             if(Steam_TradeAPI.hasNewTradeOffers(client)) {
 
@@ -35,12 +43,23 @@ public class Trade implements Runnable {
                         );
 
                 for(TradeOffer offer : offers) {
+
+                    if(offer.trade_offer_state != ETradeOfferState.Active) {
+                        continue;
+                    }
+
+                    List<Item> items = new ArrayList<>(offer.items_to_give);
+                    items.addAll(offer.items_to_receive);
+
+                    Item.fetchDescriptionForItems(client, items);
+
                     if(checkTradeValue(offer)){
                         if(offer.accept(client, cookies)) {
-                            db.saveTradeOffer(offer);
+                            db.saveTradeOffer(offer, "Accepted");
                         }
+                        System.out.println("Trade Offer Accepted.");
                     }else {
-                        offer.decline();
+                        if(offer.decline(client)) db.saveTradeOffer(offer, "Declined");
                     }
                 }
             }
@@ -53,14 +72,23 @@ public class Trade implements Runnable {
         }
     }
 
+    /**
+     * While checking trade value we first hard compare the item to find if we have an exactly matching item.
+     * If we find the item we buy or sell at the price of the item.
+     * But if we do not find the item in hard compare, we will soft compare the item only if we are buying the item,
+     * and set the price to the closest match that is available.
+     * @param offer TradeOffer
+     * @return If the value of trade is fair.
+     */
     private boolean checkTradeValue(TradeOffer offer) {
-        Long valueItemsToReceive = Long.valueOf(0);
+        Integer valueItemsToReceive = Integer.valueOf(0);
         List<Item> itemsNotFoundFirst = new ArrayList<>();
         for(Item item : offer.items_to_receive) {
+
             boolean foundItemInAccept = false;
             for(Document doc : accept) {
                 if(item.compareItemToDocument(doc, TradeOperation.SELL)) {
-                    valueItemsToReceive += (Long)doc.get("BuyAt");
+                    valueItemsToReceive += (Integer)doc.get("BuyAt");
                     foundItemInAccept = true;
                 }
             }
@@ -71,21 +99,24 @@ public class Trade implements Runnable {
         for(Item item : itemsNotFoundFirst) {
             for(Document doc : accept) {
                 if(item.compareItemToDocument(doc, TradeOperation.BUY)) {
-                    valueItemsToReceive += (Long)doc.get("BuyAt");
+                    valueItemsToReceive += (Integer)doc.get("BuyAt");
                 }
             }
         }
 
-        long valueItemsToGive = 0;
+        Integer valueItemsToGive = 0;
         for(Item item : offer.items_to_give){
             for(Document doc : accept) {
                 if(item.compareItemToDocument(doc, TradeOperation.SELL)) {
-                    valueItemsToGive += (Long)doc.get("SellAt");
+                    valueItemsToGive += (Integer)doc.get("SellAt");
                 }
             }
         }
 
-        if(valueItemsToGive <= valueItemsToReceive) {
+        System.out.println("Item to give value : " + valueItemsToGive);
+        System.out.println("Item to receive value : " + valueItemsToReceive);
+
+        if(valueItemsToGive > 0 && valueItemsToReceive > 0 && valueItemsToGive <= valueItemsToReceive) {
             return true;
         }
 
@@ -94,7 +125,7 @@ public class Trade implements Runnable {
 
     @Override
     public void run() {
-
+        trade();
     }
 
     public enum TradeOperation {

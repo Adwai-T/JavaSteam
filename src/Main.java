@@ -5,6 +5,7 @@ import login.UserDetails;
 import org.bson.Document;
 import org.json.simple.parser.ParseException;
 import tests.SteamId_Test;
+import trade.Trade;
 import trade.TradeOffer_DataBase;
 import utils.ColorToTerminal;
 import utils.Files_Handler;
@@ -47,6 +48,9 @@ public class Main {
         //This step is necessary before performing any tests
         getAuthenticationDetails();
         addCommonCookiesToMap();
+
+        Trade trade = new Trade(client, db, cookies);
+        trade.run();
 
         //Tests
         //Do the test after login or after we have our authentication details. As all test depend on them.

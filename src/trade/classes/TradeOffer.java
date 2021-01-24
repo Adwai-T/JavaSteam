@@ -4,6 +4,7 @@ import login.SteamID;
 import org.bson.Document;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
+import steamapi.Steam_TradeAPI;
 import trade.enums.ETradeOfferState;
 import utils.Cookies_Handler;
 import utils.Form_UrlEncoder;
@@ -56,7 +57,6 @@ public class TradeOffer {
         String bodyString = Form_UrlEncoder.encode(body);
 
         String cookiesString = Cookies_Handler.getCookieStringFromMap(cookies);
-        System.out.println("Cookies -> " + cookiesString);
         Map<String, String> headers = new HashMap<>();
         headers.put("Cookie", cookiesString);
         headers.put("Referer", "https://steamcommunity.com/tradeoffer/" + this.tradeofferid);
@@ -68,16 +68,16 @@ public class TradeOffer {
         HttpRequest request = HttpRequestBuilder.build(url, headers, HttpRequestBuilder.RequestType.POST,bodyString);
         HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
 
-        System.out.println(response.statusCode());
-        if(response.body() == null) {
-            System.out.println(response.body());
-        }
-
         return true;
     }
 
-    //TODO : Implement Decline TradeOffers
-    public boolean decline() { return false; }
+    public boolean decline(HttpClient client) throws IOException, InterruptedException {
+        int status = Steam_TradeAPI.declineTradeOffer(client, this).statusCode();
+        if(status == 200) {
+            return true;
+        }
+        return false;
+    }
 
     public static TradeOffer parseTradeOfferFromJSON(JSONObject jsonTradeOffer) {
         TradeOffer tradeOffer = new TradeOffer();

@@ -142,8 +142,6 @@ public class Item {
         for(Item item : items) {
             String itemIdentifier = item.classid+"_"+item.instanceid;
 
-//            System.out.println(itemIdentifier);
-
             JSONObject itemJSON = (JSONObject) result.get(itemIdentifier);
 
             //Some weapons especially unique(normal yellow) quality weapons don't have instance id.
@@ -191,6 +189,7 @@ public class Item {
 
             deduceItemQuality(item);
             deduceKillstreakProperties(item);
+            if(item.isFestivized == null) item.isFestivized = false;
         }
     }
 
@@ -274,7 +273,7 @@ public class Item {
     private static String getNameFromFraudWarning(Object fraudWarning) {
         try{
             String name = (String) fraudWarning;
-            if(name.length() > 25) {
+            if(name.length() > 25 && name != null) {
                 String regex  = "\\\".*\\\"$";
                 return Regex_Handler
                         .getMatches(name, regex)
@@ -302,6 +301,11 @@ public class Item {
     }
 
     private static void deduceKillstreakProperties(Item item){
+        if(item.hasKillStreakActive == null) {
+            item.hasKillStreakActive = false;
+            item.hasKillstreakEffect = false;
+            item.hasKillstreakSheen = false;
+        }
         if(item.hasKillStreakActive) {
             if(item.killstreakSheen != null) item.hasKillstreakSheen = true;
             if(item.killstreakEffect != null) item.hasKillstreakEffect = true;
@@ -339,10 +343,10 @@ public class Item {
 
     /*
         We give leeway when we buy item, so we can buy items more valuable than what we asked for.
-        eg. A item that has paint when we buy order for item without any can be bought.
+        eg. A item that has paint can be bought at the price that we have set for a non painted item.
         But when we sell items we want the item to be exactly matched so that we get the exact price
         for that item as we have set.
-        eg. when we sell we want so differentiate between painted and non painted items and even the
+        eg. When we sell we want so differentiate between painted and non painted items and even the
         paint color of item.
      */
     public boolean compareItemToDocument(Document doc, Trade.TradeOperation operation) {
@@ -362,6 +366,7 @@ public class Item {
         return false;
     }
 
+    //Also can be named as Soft-Compare. Might not be the exact item in the document.
     private boolean compareBuySpecific(Document doc) {
         if(isFestivized || Objects.equals(doc.get("isFestivized"), isFestivized)){
             if(doc.get("paint") != null) {
@@ -400,6 +405,7 @@ public class Item {
         return false;
     }
 
+    //Can also be called Hard-Compare as the item will be the same as the item specified in the Document.
     private boolean compareSellSpecific(Document doc) {
         if(Objects.equals(doc.get("isFestivized"), isFestivized)){
             if(Objects.equals(doc.get("paint"), paint)) {
@@ -413,8 +419,8 @@ public class Item {
         if(Objects.equals(doc.get("hasKillstreakActive"), hasKillStreakActive)){
             if(Objects.equals(doc.get("hasKillstreakSheen"), hasKillstreakSheen)) {
                 if (Objects.equals(doc.get("hasKillstreakEffect"), hasKillstreakEffect)) {
-                    if (doc.get("killstreakSheen").equals(killstreakSheen)) {
-                        if (doc.get("killstreakEffect").equals(killstreakEffect)) {
+                    if (Objects.equals(killstreakSheen, doc.get("killstreakSheen"))) {
+                        if (Objects.equals(killstreakEffect, doc.get("killstreakEffect"))) {
                             return true;
                         }
                     }

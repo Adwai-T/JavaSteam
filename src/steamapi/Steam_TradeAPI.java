@@ -123,4 +123,20 @@ public class Steam_TradeAPI {
         return client.send(request, HttpResponse.BodyHandlers.ofString());
     }
 
+    public static HttpResponse<String> declineTradeOffer(HttpClient client, TradeOffer offer) throws IOException, InterruptedException {
+        String url = "https://api.steampowered.com/IEconService/DeclineTradeOffer/v1";
+
+        Map<String, String> params = new HashMap<>();
+        params.put("key", UserDetails.APIKEY);
+        params.put("tradeofferid", offer.tradeofferid);
+        String paramsString = Form_UrlEncoder.encode(params);
+
+        Map<String, String> headers = new HashMap<>();
+
+        HttpRequest request = HttpRequestBuilder.build(
+                url, headers, HttpRequestBuilder.RequestType.POST, null, paramsString);
+
+        return client.send(request, HttpResponse.BodyHandlers.ofString());
+    }
+
 }

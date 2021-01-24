@@ -84,7 +84,7 @@ public class TradeOffer_Test {
             savetradeOffer(client, db);
         } else {
             TradeOffer offer = offers.get(index);
-            db.saveTradeOffer(offer);
+            db.saveTradeOffer(offer, "Accepted");
             System.out.println(ColorToTerminal.ANSI_BLUE + "Saved Trade Offer to DB" + ColorToTerminal.ANSI_RESET);
         }
     }

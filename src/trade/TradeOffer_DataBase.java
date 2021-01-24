@@ -34,14 +34,14 @@ public class TradeOffer_DataBase {
         return docs;
     }
 
-    public boolean saveTradeOffer(TradeOffer offer){
-        MongoCollection<Document> offers = db.getCollection("Accepted");
+    public boolean saveTradeOffer(TradeOffer offer, String collection){
+        MongoCollection<Document> offers = db.getCollection(collection);
         offers.insertOne(offer.toBsonDocument());
         return true;
     }
 
-    public boolean saveTradeOffers(List<TradeOffer> tradeOffers) {
-        MongoCollection<Document> offers = db.getCollection("Accepted");
+    public boolean saveTradeOffers(List<TradeOffer> tradeOffers, String collection) {
+        MongoCollection<Document> offers = db.getCollection(collection);
         try {
             List<Document> offerDocs = new ArrayList<>();
             for(TradeOffer offer : tradeOffers) {
