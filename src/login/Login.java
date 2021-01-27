@@ -1,15 +1,19 @@
 package login;
 
+import login.guard.SteamGuardAccount;
 import org.json.simple.JSONObject;
 import org.json.simple.JSONValue;
 import utils.*;
 
 import java.io.File;
+import java.io.IOException;
 import java.math.BigInteger;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.net.http.HttpResponse.BodyHandlers;
+import java.security.InvalidKeyException;
+import java.security.NoSuchAlgorithmException;
 import java.util.*;
 
 public class Login {
@@ -33,7 +37,8 @@ public class Login {
     private String rsa_exp;
     private String rsa_timeStamp;
 
-    public Login(HttpClient client){
+    public Login(HttpClient client)
+            throws InterruptedException, NoSuchAlgorithmException, InvalidKeyException, IOException {
         this.client = client;
         cookies = new HashMap<>();
 
@@ -54,9 +59,16 @@ public class Login {
         //Generate Password
         String password = new RSAEncrypt(UserDetails.PASSWORD, rsa_public, rsa_exp).getEncryptedPassword();
 
-        //Get twofactorcode from user.
-        System.out.println(ColorToTerminal.ANSI_GREEN_BACKGROUND + ColorToTerminal.ANSI_BLACK + "Please Enter Two-Factor Authentication Code : " + ColorToTerminal.ANSI_RESET);
-        String twofactorcode = GetUserInputFromTerminal.getString();
+        String twofactorcode;
+
+        if(Objects.equals(UserDetails.SECRET, null)) {
+//            Get twofactorcode from user.
+            System.out.println(ColorToTerminal.ANSI_GREEN_BACKGROUND + ColorToTerminal.ANSI_BLACK + "Please Enter Two-Factor Authentication Code : " + ColorToTerminal.ANSI_RESET);
+            twofactorcode = GetUserInputFromTerminal.getString();
+        }else {
+            SteamGuardAccount steamGuardAccount = new SteamGuardAccount(UserDetails.SECRET);
+            twofactorcode = steamGuardAccount.generateSteamGuardCode(client);
+        }
 
         //Login Form
         Map<String, String> fromData = new HashMap<>();

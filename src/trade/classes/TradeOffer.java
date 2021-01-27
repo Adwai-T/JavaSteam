@@ -43,6 +43,15 @@ public class TradeOffer {
 
     public TradeOffer() {}
 
+    //TODO : Add mobile Authentication confirmation so the trade is accepted completely here.
+    /**
+     * Accept Trade offer.
+     * @param client HttpClient
+     * @param cookies The Cookies Map.
+     * @return boolean, True if trade accept was successful.
+     * @throws IOException
+     * @throws InterruptedException
+     */
     public boolean accept(HttpClient client, Map<String, String> cookies) throws IOException, InterruptedException {
 
         if(this.trade_offer_state != ETradeOfferState.Active) {
@@ -70,9 +79,11 @@ public class TradeOffer {
         HttpRequest request = HttpRequestBuilder.build(url, headers, HttpRequestBuilder.RequestType.POST,bodyString);
         HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
 
-        recentlyAcceptedTradeOffers.add(this.tradeofferid);
-
-        return true;
+        if(response.statusCode() == 200) {
+            recentlyAcceptedTradeOffers.add(this.tradeofferid);
+            return true;
+        }
+        return false;
     }
 
     public boolean decline(HttpClient client) throws IOException, InterruptedException {

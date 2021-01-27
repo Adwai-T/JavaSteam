@@ -2,19 +2,26 @@
 
 ## Add UserDetails
 
-Create a File "UserDetails" in src/login folder.
+Create a File "UserDetails" in src/login folder. Paste the Code and fill in the details in the class. 
 
-Paste the Code and fill in the details in the class.
+As security saving passwords and sensitive data on file is not good especially if you are going to build on
+this project. So we will save our variables as environment variables.
+
+If you are not concerned with security the variables can be directly filled in with relevant String values.
 
 ```java
 package login;
 
 public class UserDetails {
 
-    public static final String USERNAME = "";
-    public static final String PASSWORD = "";
+    public static final String USERNAME = System.getenv("USER");
+    public static final String PASSWORD = System.getenv("PASS");
+    public static final String APIKEY = System.getenv("KEY");
+    public static final String MONGODBLINK = System.getenv("MONGO");
+//Set SECRET to null if you don't have shared_secret or will provide the twofactorcode at the time of login.
+    public static final String SECRET = System.getenv("SECRET"); 
 
-    public UserDetails() {}
+    public UserDetails() { }
 }
 ```
 

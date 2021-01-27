@@ -16,10 +16,14 @@ import utils.TimeStamp_Handler;
 import java.io.File;
 import java.io.IOException;
 import java.net.http.HttpClient;
+import java.security.InvalidKeyException;
+import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.HashMap;
 
 //TODO : Add threads to parallel fetch data.
+
+//TODO : Add Mobile Auth code generator.
 
 //TODO : Implement local file support for TradeOffers.
 
@@ -30,6 +34,7 @@ public class Main {
     public static MongoClient db_client;
     public static TradeOffer_DataBase db;
     public static ArrayList<Document> trades;
+    public static final String TIMEOFFSET = "19800"; //This is timezoneOffset for India.
 
     private void initalizeClients() {
         //Initialize MongoClient to send and get trade offer details.
@@ -50,11 +55,19 @@ public class Main {
 
         //This step is necessary before performing any tests
         initalizeClients();
-        getAuthenticationDetails();
-        addCommonCookiesToMap();
+        try{
+            getAuthenticationDetails();
+            addCommonCookiesToMap();
+        }catch(Exception e) {
+            ColorToTerminal.printRED("Login Failed");
+            ColorToTerminal.printRED(e.getMessage());
+            e.printStackTrace();
+            return;
+        }
 
-        //Tests
-        //Do the test after login or after we have our authentication details. As all test depend on them.
+
+//        Tests
+//        Do the test after login or after we have our authentication details. As all test depend on them.
         test();
 
         Boolean running = true;
@@ -79,21 +92,8 @@ public class Main {
         Main main = new Main();
     }
 
-    private static int selectOption(){
-        System.out.println(
-                ColorToTerminal.ANSI_GREEN_BACKGROUND
-                + ColorToTerminal.ANSI_BLACK
-                + "Please Select One of the numbers"
-        );
-        System.out.println(ColorToTerminal.ANSI_RESET + ColorToTerminal.ANSI_PURPLE);
-        System.out.println("1 -> Login");
-        System.out.println("2 -> Use Saved Auth File");
-        System.out.println("3 -> Exit");
-        System.out.println(ColorToTerminal.ANSI_RESET);
-        return Integer.parseInt(GetUserInputFromTerminal.getString());
-    }
-
-    private void getAuthenticationDetails() {
+    private void getAuthenticationDetails()
+            throws InterruptedException, NoSuchAlgorithmException, InvalidKeyException, IOException {
         int selectedOption = selectOption();
         if(selectedOption == 1) {
             Login login = new Login(client);
@@ -109,9 +109,23 @@ public class Main {
         }
     }
 
+    private static int selectOption(){
+        System.out.println(
+                ColorToTerminal.ANSI_GREEN_BACKGROUND
+                        + ColorToTerminal.ANSI_BLACK
+                        + "Please Select One of the numbers"
+        );
+        System.out.println(ColorToTerminal.ANSI_RESET + ColorToTerminal.ANSI_PURPLE);
+        System.out.println("1 -> Login");
+        System.out.println("2 -> Use Saved Auth File");
+        System.out.println("3 -> Exit");
+        System.out.println(ColorToTerminal.ANSI_RESET);
+        return Integer.parseInt(GetUserInputFromTerminal.getString());
+    }
+
     private void addCommonCookiesToMap() {
         cookies.put("Steam_Language", "english");
-        cookies.put("timezoneOffset", "19800"); //This is timezoneOffset for India.
+        cookies.put("timezoneOffset", TIMEOFFSET);
         cookies.put("bCompletedTradeOfferTutorial", "true");
         cookies.put("sessionid", Login.generateSessionId());
     }
