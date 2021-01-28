@@ -31,6 +31,7 @@ public class Main {
 
     public final static HttpClient client = HttpClient.newHttpClient();
     public HashMap<String, String> cookies;
+    public HashMap<String, String> transferParameters;
     public static MongoClient db_client;
     public static TradeOffer_DataBase db;
     public static ArrayList<Document> trades;
@@ -100,7 +101,7 @@ public class Main {
             cookies = login.getCookies();
         }else if(selectedOption == 2) {
             try{
-                cookies = Files_Handler.readJSONFromFile(new File("Auth.json"));
+                cookies = Files_Handler.readJSONFromFile(new File("Cookies.json"));
             }catch(IOException e) {
                 System.out.println(ColorToTerminal.ANSI_RED + "Could not find/read the Auth file." + ColorToTerminal.ANSI_RESET);
             }catch(ParseException e) {
@@ -128,6 +129,9 @@ public class Main {
         cookies.put("timezoneOffset", TIMEOFFSET);
         cookies.put("bCompletedTradeOfferTutorial", "true");
         cookies.put("sessionid", Login.generateSessionId());
+        cookies.put("mobileClientVersion", "0 (2.1.3)");
+        cookies.put("mobileClient", "android");
+        cookies.put("dob", "");
     }
 
     private boolean test() {

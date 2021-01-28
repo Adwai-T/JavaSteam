@@ -276,7 +276,7 @@ public class Item {
             if(name.length() > 25 && name != null) {
                 String regex  = "\\\".*\\\"$";
                 return Regex_Handler
-                        .getMatches(name, regex)
+                        .getFirstMatch(name, regex)
                         .get(0)
                         .replace("\\", "")
                         .replace("\"", "");
@@ -289,7 +289,7 @@ public class Item {
                 if(num != null && num.length() > 25) {
                     String regex  = "\\\".*\\\"$";
                     return Regex_Handler
-                            .getMatches(num, regex)
+                            .getFirstMatch(num, regex)
                             .get(0)
                             .replace("\\", "")
                             .replace("\"", "");

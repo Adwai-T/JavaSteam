@@ -3,4 +3,5 @@
 /.idea
 /steamTradeBot.iml
 /Notes.md
-Auth.json
+Cookies.json
+TransferParameters.json

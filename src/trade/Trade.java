@@ -18,7 +18,7 @@ import java.util.Map;
 
 public class Trade implements Runnable {
 
-    private List<Document> accept;
+    private List<Document> accept;//List of items of known value in database
     private HttpClient client;
     private TradeOffer_DataBase db;
     Map<String, String> cookies;
@@ -124,13 +124,12 @@ public class Trade implements Runnable {
             }
         }
 
-        System.out.println("Item to give value : " + valueItemsToGive);
-        System.out.println("Item to receive value : " + valueItemsToReceive);
+//        System.out.println("Item to give value : " + valueItemsToGive);
+//        System.out.println("Item to receive value : " + valueItemsToReceive);
 
         if(valueItemsToGive > 0 && valueItemsToReceive > 0 && valueItemsToGive <= valueItemsToReceive) {
             return true;
         }
-
         return false;
     }
 

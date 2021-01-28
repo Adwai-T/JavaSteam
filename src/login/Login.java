@@ -20,12 +20,14 @@ public class Login {
 
     private HttpClient client;
     private HashMap<String, String> cookies;
+    private HashMap<String, String> transferParameters;
 
     private static final String url_rsa = "https://steamcommunity.com/login/getrsakey/";
     private static final String url_dologin = "https://steamcommunity.com/mobilelogin/dologin/";
 
     //Headers
     private static final String accept = "*/*";
+    private static final String user_agentMobile = "Mozilla/5.0 (Linux; U; Android 4.1.1; en-us; Google Nexus 4 - 4.1.1 - API 16 - 768x1280 Build/JRO03S) AppleWebKit/534.30 (KHTML, like Gecko) Version/4.0 Mobile Safari/534.30";
     private static final String user_agent = "Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.88 Safari/537.36";
     private static final String content_type = "application/x-www-form-urlencoded; charset=UTF-8";
     private static final String origin = "https://steamcommunity.com";
@@ -41,12 +43,13 @@ public class Login {
             throws InterruptedException, NoSuchAlgorithmException, InvalidKeyException, IOException {
         this.client = client;
         cookies = new HashMap<>();
+        transferParameters = new HashMap<>();
 
         headers = new HashMap<>();
         headers.put("Accept", accept);
         headers.put("Origin", origin);
         headers.put("Referer", referer);
-        headers.put("User-Agent", user_agent);
+        headers.put("User-Agent", user_agentMobile);
         headers.put("Content-Type", content_type);
 
         try {
@@ -61,13 +64,13 @@ public class Login {
 
         String twofactorcode;
 
-        if(Objects.equals(UserDetails.SECRET, null)) {
+        if(Objects.equals(UserDetails.SHAREDSECRET, null)) {
 //            Get twofactorcode from user.
             System.out.println(ColorToTerminal.ANSI_GREEN_BACKGROUND + ColorToTerminal.ANSI_BLACK + "Please Enter Two-Factor Authentication Code : " + ColorToTerminal.ANSI_RESET);
             twofactorcode = GetUserInputFromTerminal.getString();
         }else {
-            SteamGuardAccount steamGuardAccount = new SteamGuardAccount(UserDetails.SECRET);
-            twofactorcode = steamGuardAccount.generateSteamGuardCode(client);
+            SteamGuardAccount steamGuardAccount = new SteamGuardAccount(client);
+            twofactorcode = steamGuardAccount.generateSteamGuardCode();
         }
 
         //Login Form
@@ -75,6 +78,7 @@ public class Login {
         fromData.put("username", UserDetails.USERNAME);
         fromData.put("password", password);
         fromData.put("twofactorcode", twofactorcode);
+        fromData.put("oauth_client_id", "DE45CD61"); //---Added
         fromData.put("emailauth", "");
         fromData.put("loginfriendlyname", "");
         fromData.put("captchagid", "-1");
@@ -91,12 +95,14 @@ public class Login {
             response = client.send(request, BodyHandlers.ofString());
             JSONObject responseObject = (JSONObject) JSONValue.parse(response.body());
 
+//            ColorToTerminal.printBLUE(responseObject.toJSONString());
+
             if(responseObject.containsKey("success") && (boolean)responseObject.get("success")){
 
                 System.out.println(ColorToTerminal.ANSI_CYAN + "Logged-in Successfully" + ColorToTerminal.ANSI_RESET);
 
                 //Save Cookies in a file as well as memory
-                saveCookies(Cookies_Handler.getCookiesFromHeader(response.headers()));
+                saveCookiesAndTransferParameters(Cookies_Handler.getCookiesFromHeader(response.headers()), responseObject);
 
             }else {
                 System.out.println(response.body());
@@ -135,7 +141,7 @@ public class Login {
     }
 
     //Put needed cookies in cookies Map
-    private void saveCookies(HashMap<String, String> allcookies) throws Exception{
+    private void saveCookiesAndTransferParameters(HashMap<String, String> allcookies, JSONObject response) throws Exception{
         //Delete all previous cookies as we need to add new Cookies every login
         cookies.clear();
 
@@ -152,10 +158,23 @@ public class Login {
             }else throw new Exception("Cookies does not contain one of the needed Authentication Cookie");
         }
 
+        //Get transfer_parameters from response body. Contains oauth_token that needs to be persisted.
+        JSONObject transfer_parameters = (JSONObject) response.get("transfer_parameters");
+        cookies.put("steamid", (String)transfer_parameters.get("steamid"));
+
+        transferParameters.put("steamid", (String)transfer_parameters.get("steamid"));
+        transferParameters.put("webcookie", (String)transfer_parameters.get("webcookie"));
+        transferParameters.put("auth", (String)transfer_parameters.get("auth"));
+        transferParameters.put("token_secure", (String)transfer_parameters.get("token_secure"));
+
         //Save to File
-        File file = new File("Auth.json");
+        File file = new File("Cookies.json");
         Files_Handler.writeMapAsJSONToFile(file, cookies);
-        System.out.println(ColorToTerminal.ANSI_BLUE + "Auth.json File saved in root folder. Please do not share this file." + ColorToTerminal.ANSI_RESET);
+        System.out.println(ColorToTerminal.ANSI_BLUE + "Cookies.json File saved in root folder. Please do not share this file." + ColorToTerminal.ANSI_RESET);
+
+        File file1 = new File("TransferParameters.json");
+        Files_Handler.writeMapAsJSONToFile(file1, transferParameters);
+        ColorToTerminal.printBLUE("TransferParameters.json File saved in root folder. Please do not share this file.");
     }
 
     public HashMap<String, String> getCookies() {
@@ -164,5 +183,9 @@ public class Login {
 
     public static String generateSessionId() {
         return new BigInteger(96, new Random()).toString(16);
+    }
+
+    public HashMap<String, String> getTransferParameters() {
+        return transferParameters;
     }
 }
