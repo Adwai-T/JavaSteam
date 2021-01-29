@@ -2,12 +2,12 @@ import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoClients;
 import login.Login;
 import login.UserDetails;
+import login.guard.Confirmation;
+import login.guard.SteamGuardAccount;
 import org.bson.Document;
 import org.json.simple.parser.ParseException;
 import tests.SteamId_Test;
-import trade.Trade;
 import trade.TradeOffer_DataBase;
-import trade.classes.TradeOffer;
 import utils.ColorToTerminal;
 import utils.Files_Handler;
 import utils.GetUserInputFromTerminal;
@@ -20,6 +20,7 @@ import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 
 //TODO : Add threads to parallel fetch data.
 
@@ -32,8 +33,9 @@ public class Main {
     public final static HttpClient client = HttpClient.newHttpClient();
     public HashMap<String, String> cookies;
     public HashMap<String, String> transferParameters;
-    public static MongoClient db_client;
-    public static TradeOffer_DataBase db;
+    public MongoClient db_client;
+    public TradeOffer_DataBase db;
+    public SteamGuardAccount steamGuard;
     public static ArrayList<Document> trades;
     public static final String TIMEOFFSET = "19800"; //This is timezoneOffset for India.
 
@@ -59,6 +61,14 @@ public class Main {
         try{
             getAuthenticationDetails();
             addCommonCookiesToMap();
+            steamGuard = new SteamGuardAccount(client, cookies);
+            List<Confirmation> confirmations = steamGuard.fetchConfirmations();
+            ColorToTerminal.printBGGREEN(Integer.toString(confirmations.size()));
+            if(confirmations.size() > 0) {
+                for(Confirmation confirmation : confirmations) {
+                    ColorToTerminal.printYELLOW(confirmation.toString());
+                }
+            }
         }catch(Exception e) {
             ColorToTerminal.printRED("Login Failed");
             ColorToTerminal.printRED(e.getMessage());
@@ -71,19 +81,19 @@ public class Main {
 //        Do the test after login or after we have our authentication details. As all test depend on them.
         test();
 
-        Boolean running = true;
-        while(running) {
-            System.out.println(TradeOffer.recentlyAcceptedTradeOffers);
-            ColorToTerminal.printYELLOW("Running ... ");
-            Trade trade = new Trade(client, db, cookies);
-            trade.run();
-            try{
-                ColorToTerminal.printYELLOW("Sleeping ... ");
-                Thread.sleep(10000);
-            }catch (InterruptedException ie) {
-                System.out.println(ColorToTerminal.ANSI_RED + "Thread Sleep Failed." + ColorToTerminal.ANSI_RESET);
-            }
-        }
+//        Boolean running = true;
+//        while(running) {
+//            System.out.println(TradeOffer.recentlyAcceptedTradeOffers);
+//            ColorToTerminal.printYELLOW("Running ... ");
+//            Trade trade = new Trade(client, db, cookies);
+//            trade.run();
+//            try{
+//                ColorToTerminal.printYELLOW("Sleeping ... ");
+//                Thread.sleep(10000);
+//            }catch (InterruptedException ie) {
+//                System.out.println(ColorToTerminal.ANSI_RED + "Thread Sleep Failed." + ColorToTerminal.ANSI_RESET);
+//            }
+//        }
 
         //Bot Terminates
         System.out.println(ColorToTerminal.ANSI_GREEN + "Bot ShutDown" + ColorToTerminal.ANSI_RESET);

@@ -1,5 +1,6 @@
 package login;
 
+import login.guard.EndPoints;
 import login.guard.SteamGuardAccount;
 import org.json.simple.JSONObject;
 import org.json.simple.JSONValue;
@@ -24,6 +25,8 @@ public class Login {
 
     private static final String url_rsa = "https://steamcommunity.com/login/getrsakey/";
     private static final String url_dologin = "https://steamcommunity.com/mobilelogin/dologin/";
+//    private static final String url_dologin = "https://steamcommunity.com/login/dologin";
+
 
     //Headers
     private static final String accept = "*/*";
@@ -31,7 +34,8 @@ public class Login {
     private static final String user_agent = "Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.88 Safari/537.36";
     private static final String content_type = "application/x-www-form-urlencoded; charset=UTF-8";
     private static final String origin = "https://steamcommunity.com";
-    private static final String referer = "https://steamcommunity.com/login/home/?goto=";
+//    private static final String referer = "https://steamcommunity.com/login/home/?goto=";
+    private static final String referer =  EndPoints.COMMUNITY_BASE + "/mobilelogin?oauth_client_id=DE45CD61&oauth_scope=read_profile%20write_profile%20read_client%20write_client";
     private Map<String, String> headers;
 
     //RSA
@@ -69,24 +73,25 @@ public class Login {
             System.out.println(ColorToTerminal.ANSI_GREEN_BACKGROUND + ColorToTerminal.ANSI_BLACK + "Please Enter Two-Factor Authentication Code : " + ColorToTerminal.ANSI_RESET);
             twofactorcode = GetUserInputFromTerminal.getString();
         }else {
-            SteamGuardAccount steamGuardAccount = new SteamGuardAccount(client);
+            SteamGuardAccount steamGuardAccount = new SteamGuardAccount(client, cookies);
             twofactorcode = steamGuardAccount.generateSteamGuardCode();
         }
 
         //Login Form
-        Map<String, String> fromData = new HashMap<>();
-        fromData.put("username", UserDetails.USERNAME);
-        fromData.put("password", password);
-        fromData.put("twofactorcode", twofactorcode);
-        fromData.put("oauth_client_id", "DE45CD61"); //---Added
-        fromData.put("emailauth", "");
-        fromData.put("loginfriendlyname", "");
-        fromData.put("captchagid", "-1");
-        fromData.put("captcha_text", "");
-        fromData.put("emailsteamid", "");
-        fromData.put("rsatimestamp", rsa_timeStamp);
-        fromData.put("remember_login", "false");
-        String body = Form_UrlEncoder.encode(fromData);
+        Map<String, String> formData = new HashMap<>();
+        formData.put("username", UserDetails.USERNAME);
+        formData.put("password", password);
+        formData.put("twofactorcode", twofactorcode);
+        formData.put("oauth_client_id", "DE45CD61"); //---Added
+        formData.put("oauth_scope", "read_profile write_profile read_client write_client");//---Added
+        formData.put("emailauth", "");
+        formData.put("loginfriendlyname", "");
+        formData.put("captchagid", "-1");
+        formData.put("captcha_text", "");
+        formData.put("emailsteamid", "");
+        formData.put("rsatimestamp", rsa_timeStamp);
+        formData.put("remember_login", "true");
+        String body = Form_UrlEncoder.encode(formData);
 
         //Login Request
         HttpRequest request = HttpRequestBuilder.build(url_dologin, headers, HttpRequestBuilder.RequestType.POST, body);
@@ -95,7 +100,9 @@ public class Login {
             response = client.send(request, BodyHandlers.ofString());
             JSONObject responseObject = (JSONObject) JSONValue.parse(response.body());
 
-//            ColorToTerminal.printBLUE(responseObject.toJSONString());
+            ColorToTerminal.printBLUE(Integer.toString(response.statusCode()));
+            ColorToTerminal.printBLUE(responseObject.toJSONString());
+            ColorToTerminal.printBLUE(response.headers().toString());
 
             if(responseObject.containsKey("success") && (boolean)responseObject.get("success")){
 

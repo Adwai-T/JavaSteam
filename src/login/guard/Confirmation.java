@@ -8,16 +8,14 @@ public class Confirmation {
     private String Creator;// Represents either the Trade Offer ID or market transaction ID that caused this confirmation to be created.
     private ConfirmationType ConfType;// The type of this confirmation.
 
-    public Confirmation(String id, String key, String type, String creator)
-    {
+    public Confirmation(String id, String key, String type, String creator) {
         this.ID = id;
         this.Key = key;
         this.IntType = type;
         this.Creator = creator;
 
         //Do a switch simply because we're not 100% certain of all the possible types.
-        switch (Integer.parseInt(id))
-        {
+        switch (Integer.parseInt(id)) {
             case 1:
                 this.ConfType = ConfirmationType.GenericConfirmation;
                 break;
@@ -33,8 +31,18 @@ public class Confirmation {
         }
     }
 
-    public enum ConfirmationType
-    {
+    @Override
+    public String toString() {
+        return "Confirmation{" +
+                "ID='" + ID + '\'' +
+                ", Key='" + Key + '\'' +
+                ", IntType='" + IntType + '\'' +
+                ", Creator='" + Creator + '\'' +
+                ", ConfType=" + ConfType +
+                '}';
+    }
+
+    public enum ConfirmationType {
         GenericConfirmation,
         Trade,
         MarketSellTransaction,
