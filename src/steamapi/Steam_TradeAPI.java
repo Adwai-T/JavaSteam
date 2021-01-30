@@ -21,6 +21,13 @@ import java.util.Map;
 
 public class Steam_TradeAPI {
 
+    /**
+     * Gets trade offer summary and returns if there are any new Pending Received Trade offers.
+     * @param client
+     * @return true if Pending Offers present
+     * @throws IOException
+     * @throws InterruptedException
+     */
     public static boolean hasNewTradeOffers(HttpClient client) throws IOException, InterruptedException {
         try {
             JSONObject response = (JSONObject) JSONValue.parse(
@@ -78,6 +85,14 @@ public class Steam_TradeAPI {
         return client.send(request, HttpResponse.BodyHandlers.ofString());
     }
 
+    /**
+     * Get List of TradeOffer instance received.
+     * @param client
+     * @param cutoffTime
+     * @return List of TradeOffer instances.
+     * @throws IOException
+     * @throws InterruptedException
+     */
     public static List<TradeOffer> getActiveReceivedTradeOffers(HttpClient client, String cutoffTime) throws IOException, InterruptedException {
         HttpResponse<String> response = fetchActiveTradeOffers(client, cutoffTime);
         List<TradeOffer> tradeOffers = new ArrayList<>();
@@ -94,7 +109,15 @@ public class Steam_TradeAPI {
 
         return tradeOffers;
     }
-    
+
+    /**
+     * Fetches item description from steam.
+     * @param client
+     * @param items List of items (mostly from trade offer).
+     * @return HttpResponse that has item description data.
+     * @throws IOException
+     * @throws InterruptedException
+     */
     public static HttpResponse<String> fetchItemsDescription(HttpClient client, List<Item> items) throws IOException, InterruptedException {
 
         if(items.size() <= 0) {
@@ -123,6 +146,15 @@ public class Steam_TradeAPI {
         return client.send(request, HttpResponse.BodyHandlers.ofString());
     }
 
+    /**
+     * Use API key to decline trade offer with trade offer id as steam has limitation on how many request can be directly
+     * made with authentication details as we do in case of accepting trade offers.
+     * @param client HttpClient instance
+     * @param offer Trade offer to be declined.
+     * @return HttpResponse.
+     * @throws IOException
+     * @throws InterruptedException
+     */
     public static HttpResponse<String> declineTradeOffer(HttpClient client, TradeOffer offer) throws IOException, InterruptedException {
         String url = "https://api.steampowered.com/IEconService/DeclineTradeOffer/v1";
 
@@ -138,5 +170,4 @@ public class Steam_TradeAPI {
 
         return client.send(request, HttpResponse.BodyHandlers.ofString());
     }
-
 }

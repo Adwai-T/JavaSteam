@@ -7,7 +7,9 @@ import login.guard.SteamGuardAccount;
 import org.bson.Document;
 import org.json.simple.parser.ParseException;
 import tests.SteamId_Test;
+import trade.Trade;
 import trade.TradeOffer_DataBase;
+import trade.classes.TradeOffer;
 import utils.ColorToTerminal;
 import utils.Files_Handler;
 import utils.GetUserInputFromTerminal;
@@ -24,9 +26,9 @@ import java.util.List;
 
 //TODO : Add threads to parallel fetch data.
 
-//TODO : Add Mobile Auth code generator.
-
 //TODO : Implement local file support for TradeOffers.
+
+//TODO : Update MongDB accepted tradeOffer list if tradeOffer confirmation fails.
 
 public class Main {
 
@@ -62,13 +64,6 @@ public class Main {
             getAuthenticationDetails();
             addCommonCookiesToMap();
             steamGuard = new SteamGuardAccount(client, cookies);
-            List<Confirmation> confirmations = steamGuard.fetchConfirmations();
-            ColorToTerminal.printBGGREEN(Integer.toString(confirmations.size()));
-            if(confirmations.size() > 0) {
-                for(Confirmation confirmation : confirmations) {
-                    ColorToTerminal.printYELLOW(confirmation.toString());
-                }
-            }
         }catch(Exception e) {
             ColorToTerminal.printRED("Login Failed");
             ColorToTerminal.printRED(e.getMessage());
@@ -76,24 +71,31 @@ public class Main {
             return;
         }
 
-
 //        Tests
 //        Do the test after login or after we have our authentication details. As all test depend on them.
         test();
 
-//        Boolean running = true;
-//        while(running) {
-//            System.out.println(TradeOffer.recentlyAcceptedTradeOffers);
-//            ColorToTerminal.printYELLOW("Running ... ");
-//            Trade trade = new Trade(client, db, cookies);
-//            trade.run();
-//            try{
-//                ColorToTerminal.printYELLOW("Sleeping ... ");
-//                Thread.sleep(10000);
-//            }catch (InterruptedException ie) {
-//                System.out.println(ColorToTerminal.ANSI_RED + "Thread Sleep Failed." + ColorToTerminal.ANSI_RESET);
-//            }
-//        }
+        Boolean running = true;
+        while(running) {
+
+            ColorToTerminal.printYELLOW("Running ... ");
+            Trade trade = new Trade(client, db, cookies, steamGuard);
+            trade.run();
+            try{
+                ColorToTerminal.printYELLOW("Sleeping ... ");
+                Thread.sleep(10000);
+                //Let steam to catch up so that it has confirmations ready.
+                //This will only confirm trade offers accepted by this bot.
+                steamGuardConfirmAcceptedTradeOffers();
+
+            }catch (InterruptedException ie) {
+                System.out.println(ColorToTerminal.ANSI_RED + "Thread Sleep Failed." + ColorToTerminal.ANSI_RESET);
+            } catch (SteamGuardAccount.WGTokenInvalidException e) {
+                e.printStackTrace();
+            } catch (IOException ioException) {
+                ioException.printStackTrace();
+            }
+        }
 
         //Bot Terminates
         System.out.println(ColorToTerminal.ANSI_GREEN + "Bot ShutDown" + ColorToTerminal.ANSI_RESET);
@@ -142,6 +144,22 @@ public class Main {
         cookies.put("mobileClientVersion", "0 (2.1.3)");
         cookies.put("mobileClient", "android");
         cookies.put("dob", "");
+    }
+
+    private void steamGuardConfirmAcceptedTradeOffers()
+            throws InterruptedException, SteamGuardAccount.WGTokenInvalidException, IOException {
+        if(TradeOffer.recentlyAcceptedTradeOffers.size() > 0) {
+            List<Confirmation> confs = steamGuard.fetchConfirmations();
+            if(confs.size() > 0) {
+                for(Confirmation conf : confs) {
+                    if(TradeOffer.recentlyAcceptedTradeOffers.contains(conf.getCreator())) {
+                        if(steamGuard.acceptConfirmation(conf)) {
+                            TradeOffer.recentlyAcceptedTradeOffers.remove(conf.getCreator());
+                        }
+                    }
+                }
+            }
+        }
     }
 
     private boolean test() {

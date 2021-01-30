@@ -1,5 +1,6 @@
 package trade;
 
+import login.guard.SteamGuardAccount;
 import org.bson.Document;
 import steamapi.Steam_TradeAPI;
 import trade.classes.Item;
@@ -21,12 +22,21 @@ public class Trade implements Runnable {
     private List<Document> accept;//List of items of known value in database
     private HttpClient client;
     private TradeOffer_DataBase db;
-    Map<String, String> cookies;
+    private Map<String, String> cookies;
+    private SteamGuardAccount steamGuard;
 
     public Trade(HttpClient client, TradeOffer_DataBase db, Map<String, String> cookies) {
         this.client = client;
         this.db = db;
         this.cookies = cookies;
+        this.steamGuard = null;
+    }
+
+    public Trade(HttpClient client, TradeOffer_DataBase db, Map<String, String> cookies, SteamGuardAccount steamGuard) {
+        this.client = client;
+        this.db = db;
+        this.cookies = cookies;
+        this.steamGuard = steamGuard;
     }
 
     private void trade() {
@@ -70,7 +80,6 @@ public class Trade implements Runnable {
                             db.saveTradeOffer(offer, "Declined");
                             ColorToTerminal.printCYAN("TradeOffer Declined, and Saved to DB");
                         }
-
                     }
                 }
             }

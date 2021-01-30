@@ -69,7 +69,7 @@ public class Item {
     public String marketable;
     public String fraudwarnings; //When an item is renamed, this is the renamed string.
 
-    public Item() {};
+    public Item() {}
 
     public Item(Long appid, String contextid, String assetid, String classid, String instanceid) {
         this.appid = appid;
@@ -136,6 +136,9 @@ public class Item {
      */
     public static void fetchDescriptionForItems(HttpClient client, List<Item> items) throws IOException, InterruptedException {
         HttpResponse<String> response = Steam_TradeAPI.fetchItemsDescription(client, items);
+
+        if(Objects.equals(response.body(), null)) return;
+
         JSONObject responseBodyObject = (JSONObject) JSONValue.parse(response.body());
         JSONObject result = (JSONObject) responseBodyObject.get("result");
 
@@ -218,7 +221,7 @@ public class Item {
                     } else if(subValue.equals("★ Unusual ")) { //★ Unusual Effect: Kaleidoscope
                         item.effect = value.substring(18);
                     }
-                } catch (StringIndexOutOfBoundsException e) {
+                } catch (StringIndexOutOfBoundsException ignored) {
 
                 }
             } else break;
@@ -296,7 +299,6 @@ public class Item {
                 }
             }
         }
-
         return null;
     }
 
@@ -312,9 +314,12 @@ public class Item {
         }
     }
 
-
+    /**
+     * Return the map representation of this item.
+     * @return HashMap of item instance.
+     */
     public Map<String, Object> toMap() {
-        Map<String, Object> desc = new HashMap<String, Object>();
+        Map<String, Object> desc = new HashMap<>();
         desc.put("name", this.name);
         desc.put("market_name", this.market_name);
         desc.put("quality", this.quality.toString());
@@ -336,18 +341,24 @@ public class Item {
         return desc;
     }
 
+    /**
+     * Returns a Bson Type Document containing all the relevant Item variables.
+     * @return Bson Document
+     */
     public Document toBsonDocument() {
-        Document itemDoc = new Document(this.toMap());
-        return itemDoc;
+        return new Document(this.toMap());
     }
 
-    /*
-        We give leeway when we buy item, so we can buy items more valuable than what we asked for.
-        eg. A item that has paint can be bought at the price that we have set for a non painted item.
-        But when we sell items we want the item to be exactly matched so that we get the exact price
-        for that item as we have set.
-        eg. When we sell we want so differentiate between painted and non painted items and even the
-        paint color of item.
+    /**
+     * We give leeway when we buy item, so we can buy items more valuable than what we asked for.
+     * eg. A item that has paint can be bought at the price that we have set for a non painted item.
+     * But when we sell items we want the item to be exactly matched so that we get the exact price
+     * for that item as we have set.
+     * eg. When we sell we want so differentiate between painted and non painted items and even the
+     * paint color of item.
+     * @param doc Document to compare to this item
+     * @param operation BUY or SELL
+     * @return true if Match
      */
     public boolean compareItemToDocument(Document doc, Trade.TradeOperation operation) {
         if(name.equals(doc.getString("name")) && market_name.equals(doc.get("market_name"))){

@@ -86,6 +86,13 @@ public class TradeOffer {
         return false;
     }
 
+    /**
+     * Decline this trade offer.
+     * @param client
+     * @return true if successful
+     * @throws IOException
+     * @throws InterruptedException
+     */
     public boolean decline(HttpClient client) throws IOException, InterruptedException {
         int status = Steam_TradeAPI.declineTradeOffer(client, this).statusCode();
         if(status == 200) {
@@ -94,6 +101,11 @@ public class TradeOffer {
         return false;
     }
 
+    /**
+     * Parse trade offer from the Json Response that we get from steam API.
+     * @param jsonTradeOffer
+     * @return TradeOffer instance
+     */
     public static TradeOffer parseTradeOfferFromJSON(JSONObject jsonTradeOffer) {
         TradeOffer tradeOffer = new TradeOffer();
         tradeOffer.tradeofferid = (String) jsonTradeOffer.get("tradeofferid");
@@ -136,11 +148,15 @@ public class TradeOffer {
         return items;
     }
 
-    public void setHasEscrowTime(Long time){
+    private void setHasEscrowTime(Long time){
         if(time == 0) hasEscrowTime = false;
         else hasEscrowTime = true;
     }
 
+    /**
+     * Returns this Item as a Document(BSONDocument) that can be saved to MongoDB.
+     * @return org.bson.Document
+     */
     public Document toBsonDocument() {
         Document doc = new Document();
         doc.append("ID", tradeofferid);

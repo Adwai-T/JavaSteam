@@ -15,7 +15,7 @@ public class Confirmation {
         this.Creator = creator;
 
         //Do a switch simply because we're not 100% certain of all the possible types.
-        switch (Integer.parseInt(id)) {
+        switch (Integer.parseInt(type)) {
             case 1:
                 this.ConfType = ConfirmationType.GenericConfirmation;
                 break;
@@ -47,5 +47,25 @@ public class Confirmation {
         Trade,
         MarketSellTransaction,
         Unknown
+    }
+
+    public String getID() {
+        return ID;
+    }
+
+    public String getKey() {
+        return Key;
+    }
+
+    public String getIntType() {
+        return IntType;
+    }
+
+    public String getCreator() {
+        return Creator;
+    }
+
+    public ConfirmationType getConfType() {
+        return ConfType;
     }
 }

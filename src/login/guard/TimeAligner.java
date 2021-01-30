@@ -16,6 +16,13 @@ public class TimeAligner {
     private static boolean aligned = false;
     private static Long timeDifference = 0L;
 
+    /**
+     * Gets steam server time.
+     * @param client
+     * @return Epoch/Unix timestamp
+     * @throws IOException
+     * @throws InterruptedException
+     */
     public static long getSteamTime(HttpClient client) throws IOException, InterruptedException {
         if (!TimeAligner.aligned) {
             TimeAligner.alignTime(client);

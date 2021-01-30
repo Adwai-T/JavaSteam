@@ -7,6 +7,11 @@ import java.util.Map;
 
 public class Cookies_Handler {
 
+    /**
+     * Parses cookies from HttpHeader and returns them as HashMap.
+     * @param headers HttpHeader
+     * @return HashMap
+     */
     public static HashMap<String, String> getCookiesFromHeader(HttpHeaders headers){
 
         List<String> headerCookies = headers.map().get("set-cookie");
@@ -31,6 +36,11 @@ public class Cookies_Handler {
         return allCookieValues;
     }
 
+    /**
+     * Builds a String that can be used in HttpHeader cookie from cookies Map.
+     * @param cookies
+     * @return cookies String.
+     */
     public static String getCookieStringFromMap(Map<String, String> cookies) {
         StringBuilder stringBuilder = new StringBuilder();
         for (String cookie : cookies.keySet()) {

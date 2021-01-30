@@ -8,10 +8,10 @@ import java.util.regex.Pattern;
 public class Regex_Handler {
 
     /**
-     * List of first match. index 0 has Full Match and 1 to Length-1 index have String of match groups
+     * List of first match. Index 0 has Full Match and 1 to Length-1 index have String of match groups
      * @param input String to match Regex
      * @param regex String regular expression
-     * @return
+     * @return First full match and groups.
      */
     public static List<String> getFirstMatch(String input, String regex){
 
@@ -36,6 +36,13 @@ public class Regex_Handler {
         }
     }
 
+    /**
+     * Get all the matches from a given String.
+     * Each List item is a List with 0 index being full match and 1 to List.size()-1 being matched groups.
+     * @param input Input String
+     * @param regex Regex String.
+     * @return All Matches.
+     */
     public static List<List<String>> getAllMatches(String input, String regex) {
         List<List<String>> matchList = new ArrayList<>();
         List<String> match = new ArrayList<>();

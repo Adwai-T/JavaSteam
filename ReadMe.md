@@ -16,21 +16,22 @@ If you are not concerned with security the variables can be directly filled in w
 
 ```java
 package login;
-
 /*
  * API Key is necessary for all the main.java.trade related information.
- * Login to get the Auth details is possible without the API key.
+ * Login to get the Authentication details is possible without the API key.
  */
-
 public class UserDetails {
-
-    public static final String STEAMID = System.getenv("ID"); //Optional
-    public static final String USERNAME = System.getenv("USER"); //Required
-    public static final String PASSWORD = System.getenv("PASS"); //Required
-    public static final String APIKEY = System.getenv("KEY"); //Required
-    public static final String MONGODBLINK = System.getenv("MONGO"); //Set to null if not provided
-    public static final String SHAREDSECRET = System.getenv("SECRET"); //Set to null if not provided
-    public static final String IDENTITYSECRET = System.getenv("IDENTITY"); //Set to null if not provided
+    public static final String STEAMID = System.getenv("ID");
+    public static final String USERNAME = System.getenv("USER");
+    public static final String PASSWORD = System.getenv("PASS");
+    public static final String APIKEY = System.getenv("KEY");
+    public static final String MONGODBLINK = System.getenv("MONGO");
+    //All of the below details will be available to you if you get the steam file from your phone
+    //https://github.com/SteamTimeIdler/stidler/wiki/Getting-your-%27shared_secret%27-code-for-use-with-Auto-Restarter-on-Mobile-Authentication
+    //Read All the instructions on the page carefully. And do not share this information.
+    public static final String SHAREDSECRET = System.getenv("SECRET");
+    public static final String IDENTITYSECRET = System.getenv("IDENTITY");
+    public static final String DEVICEID = System.getenv("DEVICE");
 
     public UserDetails() { }
 }
@@ -66,4 +67,12 @@ Especially the SharedSecret as it will be used to generate Mobile Authentication
 >the bot and temporarily prevent you from requesting, but there might be more serious consequences.
 >
 >Lastly Item trade is not always perfect as Item description provided by steam is not always consistent, and the bot might
->not be able to recognize the item perfectly.
+>not be able to recognize the item perfectly mostly when this happens the trade is declined in such case but some, additions
+>might not be recognized by the bot and might treat the item without the addon. So while adding the item to the database
+>to trade check if the addon to the item has been explicitly specified. If that addon is not present in the Item Description
+>then code of checking for it is not implemented, and you will have to do it yourself.
+
+## Bugs and Fixes.
+
+If you find any bugs or vulnerabilities in the code, or you want me to add any features please open a pull request.
+I am actively adding new features to this.

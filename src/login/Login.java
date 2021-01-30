@@ -43,6 +43,14 @@ public class Login {
     private String rsa_exp;
     private String rsa_timeStamp;
 
+    /**
+     * Login to steam and get authentication data need for further requests.
+     * @param client HttpClient
+     * @throws InterruptedException
+     * @throws NoSuchAlgorithmException
+     * @throws InvalidKeyException
+     * @throws IOException
+     */
     public Login(HttpClient client)
             throws InterruptedException, NoSuchAlgorithmException, InvalidKeyException, IOException {
         this.client = client;
@@ -100,9 +108,9 @@ public class Login {
             response = client.send(request, BodyHandlers.ofString());
             JSONObject responseObject = (JSONObject) JSONValue.parse(response.body());
 
-            ColorToTerminal.printBLUE(Integer.toString(response.statusCode()));
-            ColorToTerminal.printBLUE(responseObject.toJSONString());
-            ColorToTerminal.printBLUE(response.headers().toString());
+//            ColorToTerminal.printBLUE(Integer.toString(response.statusCode()));
+//            ColorToTerminal.printBLUE(responseObject.toJSONString());
+//            ColorToTerminal.printBLUE(response.headers().toString());
 
             if(responseObject.containsKey("success") && (boolean)responseObject.get("success")){
 
@@ -184,14 +192,26 @@ public class Login {
         ColorToTerminal.printBLUE("TransferParameters.json File saved in root folder. Please do not share this file.");
     }
 
+    /**
+     * Cookies that we get once we have logged in to steam.
+     * @return Login set-cookies
+     */
     public HashMap<String, String> getCookies() {
         return cookies;
     }
 
+    /**
+     * Generates a Steam Session Id.
+     * @return sessionId.
+     */
     public static String generateSessionId() {
         return new BigInteger(96, new Random()).toString(16);
     }
 
+    /**
+     * Steam Transfer Parameters parsed from the response when we login to steam. Used for Trade confirmations.
+     * @return Steam Transfer Parameters
+     */
     public HashMap<String, String> getTransferParameters() {
         return transferParameters;
     }

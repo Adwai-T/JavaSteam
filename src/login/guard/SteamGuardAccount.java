@@ -20,26 +20,43 @@ import java.util.*;
 public class SteamGuardAccount {
 
     private final String sharedSecret;
-    private HttpClient client;
-    private static byte[] steamGuardCodeTranslations = new byte[] { 50, 51, 52, 53, 54, 55, 56, 57, 66, 67, 68, 70, 71, 72, 74, 75, 77, 78, 80, 81, 82, 84, 86, 87, 88, 89 };
-    private String deviceID = "android:fdba102f-5e2d-4af6-92d7-27e11448044b";
-    private String referer = EndPoints.COMMUNITY_BASE + "/mobilelogin?oauth_client_id=DE45CD61&oauth_scope=read_profile%20write_profile%20read_client%20write_client";
+    private final HttpClient client;
+    private final static byte[] steamGuardCodeTranslations = new byte[] { 50, 51, 52, 53, 54, 55, 56, 57, 66, 67, 68, 70, 71, 72, 74, 75, 77, 78, 80, 81, 82, 84, 86, 87, 88, 89 };
+    private final String deviceID = UserDetails.DEVICEID;
+    private final Map<String, String> cookies;
 
-    //Set to true if the authenticator has actually been applied to the account.
-    private boolean FullyEnrolled;
-    private Map<String, String> cookies;
-
+    /**
+     * SteamGuardAccount to get the steamGuard code for login, accept send step of 2 step confirmation.
+     * @param client HttpClient
+     * @param cookies Cookies map populated after login.
+     */
     public SteamGuardAccount(HttpClient client, Map<String, String> cookies) {
         this.client = client;
         this.cookies = cookies;
         this.sharedSecret = UserDetails.SHAREDSECRET;
     }
 
+    /**
+     * Generate Steam Guard Code required for login.
+     * @return Steam Guard Code
+     * @throws IOException
+     * @throws InterruptedException
+     * @throws NoSuchAlgorithmException
+     * @throws InvalidKeyException
+     */
     public String generateSteamGuardCode()
             throws IOException, InterruptedException, NoSuchAlgorithmException, InvalidKeyException {
         return generateSteamGuardCodeForTime(TimeAligner.getSteamTime(client));
     }
 
+    /**
+     * Generate Steam Guard Code for a given time.
+     * @param time Epoch Time/Unix Time
+     * @return Steam Guard code
+     * @throws InvalidKeyException
+     * @throws NoSuchAlgorithmException
+     * @throws UnsupportedEncodingException
+     */
     public String generateSteamGuardCodeForTime(long time)
             throws InvalidKeyException, NoSuchAlgorithmException, UnsupportedEncodingException {
         if (this.sharedSecret == null || this.sharedSecret.length() == 0) {
@@ -69,47 +86,23 @@ public class SteamGuardAccount {
                 codePoint /= steamGuardCodeTranslations.length;
             }
         }
-        catch (Exception e)
-        {
-            return null; //Change later, catch-alls are bad!
+        catch (Exception e) { //Not the best catcher but should work.
+            return null;
         }
-        return new String(codeArray, "UTF-8");
+        return new String(codeArray, StandardCharsets.UTF_8);
     }
 
-//    public boolean deactivateAuthenticator() {
-//        return deactivateAuthenticator(2);
-//    }
-
-//    public boolean deactivateAuthenticator(Integer scheme)
-//    {
-//        Map<String, String> postData = new HashMap<>();
-//        postData.put("steamid", this.Session.SteamID.ToString());
-//        postData.put("steamguard_scheme", scheme.toString());
-//        postData.put("revocation_code", this.RevocationCode);
-//        postData.put("access_token", this.Session.OAuthToken);
-//
-//        try
-//        {
-//            String response = SteamWeb.MobileLoginRequest(EndPoints.STEAMAPI_BASE + "/ITwoFactorService/RemoveAuthenticator/v0001", "POST", postData);
-////            var removeResponse = JsonConvert.DeserializeObject<RemoveAuthenticatorResponse>(response);
-//
-//            if (removeResponse == null || removeResponse.Response == null || !removeResponse.Response.Success) return false;
-//            return true;
-//        }
-//        catch (Exception)
-//        {
-//            return false;
-//        }
-//    }
-
+    /**
+     * Fetch Confirmation requests for Steam Guard confirmation.
+     * @return List of Confirmations
+     * @throws IOException
+     * @throws InterruptedException
+     * @throws WGTokenInvalidException
+     */
     public List<Confirmation> fetchConfirmations()
             throws IOException, InterruptedException, WGTokenInvalidException {
         String url = generateConfirmationURL();
 
-//        Map<String, String> cookies = new HashMap<>();
-//        this.Session.AddCookies(cookies);
-
-//        String response = SteamWeb.Request(url, "GET", "", cookies);
         String cookiesString = Cookies_Handler.getCookieStringFromMap(cookies);
         Map<String, String> headers = new HashMap<>();
         headers.put("Cookie", cookiesString);
@@ -121,19 +114,19 @@ public class SteamGuardAccount {
         HttpRequest request = HttpRequestBuilder.build(url, headers, HttpRequestBuilder.RequestType.POST, "");
         HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
 
-        ColorToTerminal.printPURPLE(Integer.toString(response.statusCode()));
-        ColorToTerminal.printPURPLE(response.headers().toString());
-        ColorToTerminal.printPURPLE(response.body());
+        if(response.statusCode() == 200) {
+            ColorToTerminal.printPURPLE("Confirmation Request Fetched Successfully.");
+        }
 
         return FetchConfirmationInternal(response.body());
     }
 
     private List<Confirmation> FetchConfirmationInternal(String response) throws WGTokenInvalidException {
 
-//          Regex for HTML -- while awful -- makes this way faster than parsing a DOM,
+//          Regex for HTML -- while awful -- makes this way faster than parsing the DOM,
 //          plus we don't need another library.
 //          And because the data is always in the same place and same format...
-//          It's not as if we're trying to naturally understand HTML here. Just extract strings.
+//          It's not as if we're trying to naturally understand HTML here, just extracting Strings.
         List<List<String>> confirmations = Regex_Handler.getAllMatches(
                 response,
                 "<div class=\"mobileconf_list_entry\" id=\"conf[0-9]+\" data-confid=\"(\\d+)\" data-key=\"(\\d+)\" data-type=\"(\\d+)\" data-creator=\"(\\d+)\"");
@@ -145,50 +138,67 @@ public class SteamGuardAccount {
             return new ArrayList<>();
         }
 
-//        MatchCollection confirmations = confRegex.Matches(response);
-//        List<Confirmation> ret = new List<Confirmation>();
-//        foreach (Match confirmation in confirmations)
-//        {
-//            if (confirmation.Groups.Count != 5) continue;
-
         List<Confirmation> ret = new ArrayList<>();
         for (List<String> confirmation : confirmations) {
-
-            //I know this looks weird but it is to confirm that they are numbers as we need
-            Long confID = null;
-            Long confKey = null;
-            Long confType = null;
-            Long confCreator = null;
-
             //If our confirmation does not have all the five variable groups matched
-            if (confirmations.size() != 5) continue;
-            if (
-                    !tryParse(confirmation.get(1), confID) ||
-                    !tryParse(confirmation.get(2), confKey) ||
-                    !tryParse(confirmation.get(3), confType) ||
-                    !tryParse(confirmation.get(4), confCreator)
-                )
-            {
-                ColorToTerminal.printBGPURPLE("Continued in Addd --->");
-                continue;
-            }
-            ret.add(new Confirmation(
-                    confID.toString()
-                    , confKey.toString()
-                    , confType.toString()
-                    , confCreator.toString())
-            );
+            if (confirmation.size() != 5) continue;
+
+            String confID = confirmation.get(1);
+            String confKey = confirmation.get(2);
+            String confType = confirmation.get(3);
+            String confCreator = confirmation.get(4);
+            ret.add(new Confirmation(confID, confKey, confType, confCreator));
         }
         return ret;
     }
 
-    private boolean tryParse(String value, Long setValueOf) {
-        try {
-            setValueOf = Long.parseLong(value);
-            return true;
-        } catch (NumberFormatException e) {
-            return false;
-        }
+    /**
+     * Accept Steam Guard Confirmation
+     * @param conf Confirmation instance
+     * @return true if confirmed successfully
+     * @throws IOException
+     * @throws InterruptedException
+     */
+    public boolean acceptConfirmation(Confirmation conf) throws IOException, InterruptedException {
+        return sendConfirmationAjax(conf, "allow");
+    }
+
+    /**
+     * Decline Steam Guard Confirmation
+     * @param conf Confirmation instance
+     * @return whether confirmation was declined successfully
+     * @throws IOException
+     * @throws InterruptedException
+     */
+    public boolean denyConfirmation(Confirmation conf) throws IOException, InterruptedException {
+        return sendConfirmationAjax(conf, "cancel");
+    }
+
+    private boolean sendConfirmationAjax(Confirmation conf, String op)
+            throws IOException, InterruptedException {
+        String url = EndPoints.COMMUNITY_BASE + "/mobileconf/ajaxop";
+        String queryString = "?op=" + op + "&";
+        queryString += generateConfirmationQueryParams(op);
+        queryString += "&cid=" + conf.getID() + "&ck=" + conf.getKey();
+        url += queryString;
+
+        String referer = generateConfirmationURL();
+
+        String cookiesString = Cookies_Handler.getCookieStringFromMap(cookies);
+        Map<String, String> headers = new HashMap<>();
+        headers.put("Cookie", cookiesString);
+        headers.put("Referer", referer);
+        headers.put("Content-Type", "application/x-www-form-urlencoded; charset=UTF-8");
+        headers.put("User-Agent", "Mozilla/5.0 (Linux; U; Android 4.1.1; en-us; Google Nexus 4 - 4.1.1 - API 16 - 768x1280 Build/JRO03S) AppleWebKit/534.30 (KHTML, like Gecko) Version/4.0 Mobile Safari/534.30");
+        headers.put("Accept", "text/javascript, text/html, application/xml, text/xml, */*");
+        headers.put("Origin", "https://steamcommunity.com");
+        HttpRequest request = HttpRequestBuilder.build(url, headers, HttpRequestBuilder.RequestType.GET, "");
+        HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+
+//        ColorToTerminal.printYELLOW(Integer.toString(response.statusCode()));
+//        ColorToTerminal.printYELLOW(response.headers().toString());
+//        ColorToTerminal.printYELLOW(response.body());
+        return response.statusCode() == 200;
     }
 
     private String generateConfirmationURL(String tag)
@@ -237,7 +247,7 @@ public class SteamGuardAccount {
 
     private String generateConfirmationHashForTime(long time, String tag)
             throws UnsupportedEncodingException {
-//        byte[] decode = Convert.FromBase64String(this.IdentitySecret);
+
         byte[] decode = Base64.getDecoder().decode(UserDetails.IDENTITYSECRET);
 
         int n2 = 8;
@@ -262,35 +272,28 @@ public class SteamGuardAccount {
         }
         if (tag != null) {
 
-//            Array.Copy(Encoding.UTF8.GetBytes(tag), 0, array, 8, n2 - 8);
-            //arrayToCopy, startIndex, destArray, destArrayIndexStart, numberOfElements
-            byte[] copyArray = Arrays.copyOfRange(tag.getBytes("UTF-8"), 0, n2-8);
+            byte[] copyArray = Arrays.copyOfRange(tag.getBytes(StandardCharsets.UTF_8), 0, n2-8);
             for(int i = 0; i < copyArray.length; i++) {
                 array[i+8] = copyArray[i];
             }
         }
 
         try {
-//            HMACSHA1 hmacGenerator = new HMACSHA1();
-//            hmacGenerator.Key = decode;
-//            byte[] hashedData = hmacGenerator.ComputeHash(array);
+
             byte[] hashedData = HmacSHA1_Handler.calculateHMACSHA1(array,decode);
-//            String encodedData = Convert.ToBase64String(hashedData, Base64FormattingOptions.None);
+
             String encodedData = Base64.getEncoder().encodeToString(hashedData);
-//            String hash = WebUtility.UrlEncode(encodedData);
+
             String hash = URLEncoder.encode(encodedData, StandardCharsets.UTF_8);
             return hash;
         }
-        catch (NoSuchAlgorithmException e) {
-            e.printStackTrace();
-            return null;
-        } catch (InvalidKeyException e) {
+        catch (NoSuchAlgorithmException | InvalidKeyException e) {
             e.printStackTrace();
             return null;
         }
     }
 
-    private class WGTokenInvalidException extends Exception{
+    public static class WGTokenInvalidException extends Exception{
         WGTokenInvalidException(){
             super("No Internal confirmations to fetch.");
         }
